@@ -1,0 +1,335 @@
+1. Reset root password
+======================
+*reboot server
+*move cursor and select "e"
+* at last line "linux16", add "rd.break"
+# mount -o remount,rw /sysroot
+# chroot /sysroot
+# echo root1234 | passwd --stdin root
+# touch /.autorelabel
+# exit
+
+*after reset password and system boot, remember first thing to load GUI first. 
+# systemctl enable graphical.target
+# systemctl start graphical.target
+init 3= CLI mode
+init 5= GUI mode
+*or you can type init 5 for GUI mode
+# init 5
+
+2. Set IP, netmask, gateway, DNS, hostname
+==========================================
+# nmtui  < --- Please set IP, netmask, gateway, DNS, hostname using "nmtui tools". Or you can using nmcli with below command but i'm not suggest use nmcli. nmtui tools more freindly to use. Verify at /etc/sysconfig/network-scripts/ifcg-eth0
+# nmcli con show
+# nmcli dev status
+# nmcli con add con-name net-eth0 ifname net-eth0 type ethernet ip4 192.168.56.11/24 gw4 192.168.56.1
+# nmcli connection modify ipv4.dns 192.168.56.20
+# nmcli connection up net-eth0
+# systemctl restart NetworkManager
+# systemctl enable NetworkManager
+
+# hostnamectl set-hostname rhelnew-test
+# hostname
+
+* after question configure IP, please jump go question for update kernel. This question for you configure kernel repository, apply kernel update then have to reboot VM. I'm suggest do this question first because you need reboot VM. It safe step for you before do next question and avoid you from  something cause VM not up.
+
+3. Configure kernel repository
+==============================
+# cd /etc/yum.repo.d/
+# vi kernel.repo
+> [kernelrepo]
+> name=kernelrepo
+> baseurl=http://class.example.com/kernelonly
+> gpgcheck=0
+> enabled=1
+# yum repolist  < -- to verify
+
+4. kernel update
+================ 
+# yum install kernel
+# uname -r
+# cat /proc/version
+# rpm -qa | grep kernel
+# reboot
+# uname -r
+
+5. Configure package repository
+===============================
+# cd /etc/yum.repo.d/
+# vi redhat.repo
+> [localrepo]
+> name=localrepo
+> baseurl=http://class.example.com
+> gpgcheck=0
+> enabled=1
+# yum repolist  < -- to verify
+
+6. Configure NTP
+================
+# yum install chrony
+# vi /etc/chrony.conf
+* amend and put # at server0,server1,server2,server3
+> server classroom.example.com iburst  < -- add this line
+# systemctl restart chronyd.service
+# system enable chronyd.service
+# chronyc source -V  < -- to check ntp status
+
+7. Resize the logical volume for existing mountpoint
+====================================================
+# df -h
+# lvextend -r -L +200M /dev/mapper/vgdata/lv-1
+# df -h   <-- to verify new size
+
+8. Reduce/resize the logical volume for existing mountpoint
+====================================================
+# df -h
+# umount /data1
+# e2fsck -f /dev/mapper/vgdata/data1
+# lvreduce -L 400M /dev/mapper/vgdata/data1
+# mount -a
+# lvdisplay
+
+9. Create 100MB PV under /data mountpoint
+=========================================
+*I remember this question they only have 1 disk with 3 PV(/dev/sda1, /dev/sda2, /dev/sda3). Read carefully next question you need configure new PV for swap. Please remember to select /dev/sda then select "extend" for partition number 4 to use for VG and next wuestion for swap. Below is sample:
+
+# fdisk /dev/sda
+> select "n"
+> choose extend
+> enter
+> +20GB  < -- set to max size for extend
+> w
+# partprobe  < -- to save partition without reboot
+# fdisk /dev/sda
+> select "n"
+> select "l"
+> enter
+> +100MB
+> w
+# partprobe
+# mkfs.ext4 /dev/sda5
+# blkid  < -- check ID device after format
+# cd / | mkdir /data
+# vi /etc/fstab
+UUID=xxxxxxx /data ex4 defaults 0 0
+# mount -a
+
+9. Create new 100MB for SWAP
+=============================
+# free -m
+# fdisk /dev/sda
+> select "p"
+> select "n"
+> select "l"
+> +100M
+> select t; 82 (linux swap)  < -- please remember set swap type for this partition
+> p  < --- to is partition table to view for verify
+> w
+# partprobe
+# free -m
+# mkswap /dev/sda6
+# swapon /dev/sda6
+# swapon -a
+# swapon -s
+# swapon -p 1 /dev/sda6
+# vi /etc/fstab
+> uuid	swap swap pri=1 0 0    < --- pri is set priority for swap device and persistent after reboot
+# free -m
+
+10. Create new PV,new VG with 16MB extend, 50 extend and must vfat filesystem, then mount /data1
+================================================================================================
+# fdisk /dev/sda
+> select "p"
+> select "n"
+> select "l"
+> +100M
+> select t; 83 (linux LVM)
+> w
+# partprobe
+# pvcreate /dev/sda7
+# vgcreate -s 16M vgdata /dev/sdb7
+# vgdisplay vgdata  < -- refer at PE to verify
+# lvdisplay -l 50 -n data1 vgdata
+# mkfs.vfat /dev/mapper/vgdata-data1
+# cd / | mkdir /data1
+# blkid
+# vi /etc/fstab
+UUID=xxxxxxx /data1 vfat defaults 0 0
+# mount -a
+# df -hT  < -- to verify
+
+10. Set selinux:
+===============
+# getenforce
+# vi /etc/selinux/config
+>SELINUX=enforcing
+# setenforce enforcing
+# getenforce  < -- to verify
+
+11. Create user, group and memberships:
+======================================
+# groupadd sysgrp
+# useradd susan
+# useradd andrew
+# usermod -aG sysgrp andrew
+# usermod -aG sysgrp sasah
+# useradd -s /sbin/nologin sarah  < -- sarah no interactive shell
+
+# passwd susan  < -- set password for user
+# passwd andrew
+# passwd sarah
+
+# id andrew  < -- to verify
+# id susan
+# id sarah
+
+13. Add new user with specific ID and copy to /root/backup own by other user (julice)
+====================================================================================
+# useradd -u 2985 jack
+# mkdir /root/backup
+# find / -user julice -exec cp {} /root/backup/ \;   or
+# find / -user julice -exec cp -rfp {} /root/backup/ \;
+
+12. Set permission of folder for user access:
+=============================================
+# mkdir -p /home/file1
+# chown :sysgrp /home/file1 < -- or below command
+# chgrp sysgrp /home/file1
+# chmod 2770 /home/file1 < -- sample only, permission set base on question and sticky bit.(meaning set for 2770 = drwrxrws---)
+# cd /home/file1
+# touch test.txt
+# ls -la  < -- verify to check ( ownership shld belong sysgrp )
+
+13. Set crontab for user:
+=========================
+# yum install cronie
+# systemctl enable crond
+# systemctl start crond
+# crontab -eu andrew
+> 23	14	*	*	*	/bin/echo hiya >> /home/adrew/stamp
+# crontab -lu andrew
+# cat ~/home/andrew/stamp
+
+15. Grep command and save in another file /home/dir:
+==================================================== 
+# grep 'strato' /etc/share/dict/words > /root/lines
+
+16. create backup file content of /usr/local and tar must bzip2 to compress:
+============================================================================
+# tar jcvf /root/data.tar.bz2 /usr/local
+# tar -cvzf /root/local.tgz /usr/local
+
+18. Copy /etc/fstab to /var/tmp owned by root and not other users
+=================================================================
+# cp /etc/fstab /var/tmp
+# cd /var/tmp
+# ls
+# setfacl -m u:andrew:rw- /var/tmp/fstab
+# setfacl -m u:susan:--- /var/tmp/fstab
+# setfacl -m g:manager:r /var/tmp/fstab
+# setfacl -m u:moe:- /var/tmp/fstab < -- this for denied user
+# getfacl /var/tmp/fstab
+
+*if question said that ability to read file /var/tmp/fstab
+# setfcl -m o::r /var/tmp/fstab
+
+19. Enable IP forwading:
+========================
+# vi /etc/sysctl.conf
+*after line .conf file, add this line
+> net.ipv4.ip_forward=1
+# sysctl -p
+
+20. Configure LDAP:
+===================
+*this is important question for you to pass exam. Make sure you already load GUI earlier with init 5(graphical.manager).
+
+# yum install sssd authconfig-gtk krb5-workstation  < -- please remember this package to install
+# system-config-authentication  < -- to load or launch authentication configuration. Or you may go to (application->Sundry->authentication)
+
+info:
+=====
+LDAP server= ldap://classroom.example.com
+LDAP Base DN= dc=example,dc=com
+USE TLS= yes
+Root CA= http://classroom.example.com/pub/example-ca.crt
+Kerberos realm= EXAMPLE.COM
+Kerberos KDC= classroom.example.com
+Kerberos admin server= classroom.example.com
+
+* Go tab identify&authentication
+User Account database = LDAP
+LDAP Search Base DN = dc=example,dc=com
+LDAP Server = ldap://classroom.example.com
+Use TLS to encrypt connections (tick*)
+*click Download CA Certificate, fill up below and OK
+Certificate URL = http://classroom.example.com/pub/example-ca.crt
+Authentication Method select "LDAP password", click apply.
+
+# systemctl enable sssd.service
+# systemctl start sssd.service
+# getent passwd ldapuser0  < -- please remember this command to check ldap user whether success configure 
+ldapuser0:*:1700:LDAP test User 0:/home/guest/ldapuser0:/bin/bash
+# su - ldapuser or ssh ldapuser@localhost  < -- step to verify ldapuser is function
+
+21. Configure automount the home directories of LDAP users
+==========================================================
+*please note if you failed LDAP question, you cannot proceed to this question.
+
+# yum install autofs nfs-utils
+# vi /etc/auto.master.d/home.autofs
+> /home/guest/	/etc/auto.home
+# vi /etc/auto.home
+> ldapuser0 -rw,sync classroom.exaple.com:/home/guests/*
+
+# systemctl enable autofs.service
+# systemctl start autofs.service
+# ssh ldapuser0@localhost or su - ldapuser0 < -- to verify you are in ldap home user
+
+22. Mount NFS mountpoint: ( this question not available in exam, but i just prepare )
+=========================
+# yum install nfs-utils
+# systemctl enable nfs-secure
+# systemctl start nfs-secure
+# cd /
+# mkdir nfsmountpoint
+# mount -t nfs -o sync serverX:/share /nfsmountpoint
+# vi /etc/fstab
+> serverX:/share /nfsmountpoint nfs sync 0 0
+# umount /nfsmountpoint
+# mount -a  < -- mount all
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
