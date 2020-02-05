@@ -30,10 +30,8 @@ systemctl isolate graphical.target
 
 2. Set IP, netmask, gateway, DNS, hostname
 ==========================================
-# nmtui  < --- Please set IP, netmask, gateway, DNS, hostname using "nmtui tools". Or you can using nmcli with below command but i'm not suggest use nmcli. nmtui tools more freindly to use. Verify at /etc/sysconfig/network-scripts/ifcg-eth0
-
-*change your ip accordingly
-10.13.68.22X to 10.13.68.26x
+*** this section is a given, no need to do anything.
+# nmtui  < --- Please set IP, netmask, gateway, DNS, hostname using "nmtui tools". Or you can using nmcli with below command but i'm not suggest use nmcli. nmtui tools more freindly to use. Verify at /etc/sysconfig/network-scripts/ifcfg-eth0
 
 your name
 =========
@@ -47,8 +45,6 @@ your name
 # hostnamectl set-hostname <your name>
 # hostname
 
-* after question configure IP, please jump go question for update kernel. This question for you configure kernel repository, apply kernel update then have to reboot VM. I'm suggest do this question first because you need reboot VM. It safe step for you before do next question and avoid you from  something cause VM not up.
-
 3. Configure kernel repository
 ==============================
 # cd /etc/yum.repo.d/
@@ -56,13 +52,7 @@ your name
 # vi repos.repo
 > [BaseOS]
 > name=BaseOS
-> baseurl=files:///media/BaseOS
-> gpgcheck=0
-> enabled=1
->
-> [AppStream]
-> name=AppStream
-> baseurl=files:///media/AppStream
+> baseurl=http://10.13.68.227/repos/BaseOS
 > gpgcheck=0
 > enabled=1
 # yum repolist  < -- to verify
@@ -82,7 +72,7 @@ your name
 # vi repos.repo and add the following
 > [AppStream]
 > name=AppStream
-> baseurl=files:///media/AppStream
+> baseurl=http://10.13.68.227/repos/AppStream
 > gpgcheck=0
 > enabled=1
 # yum repolist  < -- to verify
