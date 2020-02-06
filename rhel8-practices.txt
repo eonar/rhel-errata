@@ -242,7 +242,7 @@ UUID=xxxxxxx /data1 vfat defaults 0 0
 # vdostats
 # vdo list
 
-21. Stratis
+20. Stratis
 ===========
 # dnf install stratis-cli stratisd
 # fdisk /dev/vdb
@@ -259,7 +259,7 @@ UUID=xxxxxxx /data1 vfat defaults 0 0
 # stratis fs snapshot mypool myfs1 myfs1-experiment
 # stratis fs list
 
-20. IPV6 and Enable IP forwading:
+21. IPV6 and Enable IP forwading:
 ========================
 Which IPV6 address is *not* valid?
 A. 2031:0:130F::9C0:876A:130B
@@ -270,7 +270,7 @@ B. 2031::130F::9C0:876A:130B
 > net.ipv4.ip_forward=1
 # sysctl -p
 
-21. Mount NFS mountpoint: ( this question not available in exam, but i just prepare )
+22. Mount NFS mountpoint: ( this question not available in exam, but i just prepare )
 =========================
 # yum install nfs-utils
 # systemctl enable nfs-secure
@@ -282,38 +282,3 @@ B. 2031::130F::9C0:876A:130B
 > 10.13.68.227:/mnt /nfsmountpoint nfs sync 0 0
 # umount /nfsmountpoint
 # mount -a  < -- mount all
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
