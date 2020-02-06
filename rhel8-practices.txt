@@ -234,22 +234,37 @@ UUID=xxxxxxx /data1 vfat defaults 0 0
 # tar jcvf /root/data.tar.bz2 /usr/local
 # tar -cvzf /root/local.tgz /usr/local
 
-19. Copy /etc/fstab to /var/tmp owned by root and not other users
-=================================================================
-# cp /etc/fstab /var/tmp
-# cd /var/tmp
-# ls
-# setfacl -m u:andrew:rw- /var/tmp/fstab
-# setfacl -m u:susan:--- /var/tmp/fstab
-# setfacl -m g:manager:r /var/tmp/fstab
-# setfacl -m u:moe:- /var/tmp/fstab < -- this for denied user
-# getfacl /var/tmp/fstab
+19. VDO
+=======
+# fdisk /dev/vdb
+* create 5GB partition
+# vdo create --device /dev/vdbX -n vdodata --compression enabled
+# vdostats
+# vdo list
 
-*if question said that ability to read file /var/tmp/fstab
-# setfcl -m o::r /var/tmp/fstab
+21. Stratis
+===========
+# dnf install stratis-cli stratisd
+# fdisk /dev/vdb
+* create 5GB partition
+# stratis pool create mypool /dev/vdbX 
+# stratis pool list
+# stratis fs create mypool myfs1
+# stratis fs list
+# mkdir /myfs1
+# mount /stratis/mypool/myfs1 myfs1
+# df -h 
+# cd /myfs1
+# touch doh
+# stratis fs snapshot mypool myfs1 myfs1-experiment
+# stratis fs list
 
-20. Enable IP forwading:
+20. IPV6 and Enable IP forwading:
 ========================
+Which IPV6 address is *not* valid?
+A. 2031:0:130F::9C0:876A:130B
+B. 2031::130F::9C0:876A:130B
+
 # vi /etc/sysctl.conf
 *after line .conf file, add this line
 > net.ipv4.ip_forward=1
