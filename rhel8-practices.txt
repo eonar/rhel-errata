@@ -257,7 +257,7 @@ UUID=xxxxxxx /data xfs defaults 0 0
 # stratis fs create mypool myfs1
 # stratis fs list
 # mkdir /myfs1
-# mount /stratis/mypool/myfs1 myfs1
+# mount /stratis/mypool/myfs1 /myfs1
 # df -h 
 # cd /myfs1
 # touch doh
