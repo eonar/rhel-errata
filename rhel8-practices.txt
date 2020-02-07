@@ -88,13 +88,35 @@ your name
 ====================================================
 # fdisk /dev/vda
 * add 3rd partition size 40G type Linux LVM
-# pvcreate /dev/vda3
-# vgextend rhel /dev/vda3
+# pvcreate /dev/vdaX
+# vgextend rhel /dev/vdaX
 # lvextend -L+5G /dev/rhel/var_log
 # xfs_growfs /var/log
 # df -h   <-- to verify new size
 
-8. Reduce/resize the logical volume for existing mountpoint
+8. Create new PV,new VG with 16MB extend, 50 extend and must vfat filesystem, then mount /data1
+================================================================================================
+# fdisk /dev/vda
+> select "p"
+> select "n"
+> select "l"
+> +100M
+> select t; 83 (linux LVM)
+> w
+# partprobe
+# pvcreate /dev/vdaX
+# vgcreate -s 16M vgdata /dev/vdaX
+# vgdisplay vgdata  < -- refer at PE to verify
+# lvdisplay -l 50 -n data1 vgdata
+# mkfs.ext4 /dev/mapper/vgdata-data1
+# cd / | mkdir /data1
+# blkid
+# vi /etc/fstab
+UUID=xxxxxxx /data1 ext4 defaults 0 0
+# mount -a
+# df -hT  < -- to verify
+
+9. Reduce/resize the logical volume for existing mountpoint
 ====================================================
 # df -h
 # umount /data1
@@ -103,7 +125,7 @@ your name
 # mount -a
 # lvdisplay
 
-9. Create 100MB PV under /data mountpoint
+10. Create 100MB PV under /data mountpoint
 =========================================
 *I remember this question they only have 1 disk with 3 PV(/dev/sda1, /dev/sda2, /dev/sda3). Read carefully next question you need configure new PV for swap. Please remember to select /dev/sda then select "extend" for partition number 4 to use for VG and next wuestion for swap. Below is sample:
 
@@ -121,14 +143,14 @@ your name
 > +100MB
 > w
 # partprobe
-# mkfs.xfs /dev/vdb5
+# mkfs.xfs /dev/vdbX
 # blkid  < -- check ID device after format
 # cd / | mkdir /data
 # vi /etc/fstab
 UUID=xxxxxxx /data xfs defaults 0 0
 # mount -a
 
-10. Create new 100MB for SWAP
+11. Create new 100MB for SWAP
 =============================
 # free -m
 # fdisk /dev/vdb
@@ -141,36 +163,14 @@ UUID=xxxxxxx /data xfs defaults 0 0
 > w
 # partprobe
 # free -m
-# mkswap /dev/vda6
-# swapon /dev/vda6
+# mkswap /dev/vdaX
+# swapon /dev/vdaX
 # swapon -a
 # swapon -s
-# swapon -p 1 /dev/vda6
+# swapon -p 1 /dev/vdaX
 # vi /etc/fstab
 > uuid	swap swap pri=1 0 0    < --- pri is set priority for swap device and persistent after reboot
 # free -m
-
-11. Create new PV,new VG with 16MB extend, 50 extend and must vfat filesystem, then mount /data1
-================================================================================================
-# fdisk /dev/vda
-> select "p"
-> select "n"
-> select "l"
-> +100M
-> select t; 83 (linux LVM)
-> w
-# partprobe
-# pvcreate /dev/vda7
-# vgcreate -s 16M vgdata /dev/vda7
-# vgdisplay vgdata  < -- refer at PE to verify
-# lvdisplay -l 50 -n data1 vgdata
-# mkfs.vfat /dev/mapper/vgdata-data1
-# cd / | mkdir /data1
-# blkid
-# vi /etc/fstab
-UUID=xxxxxxx /data1 vfat defaults 0 0
-# mount -a
-# df -hT  < -- to verify
 
 12. Set selinux:
 ===============
@@ -186,7 +186,7 @@ UUID=xxxxxxx /data1 vfat defaults 0 0
 # useradd susan
 # useradd andrew
 # usermod -aG sysgrp andrew
-# usermod -aG sysgrp sasah
+# usermod -aG sysgrp susan
 # useradd -s /sbin/nologin sarah  < -- sarah no interactive shell
 # useradd -G wheel shahmat
 
@@ -202,6 +202,9 @@ UUID=xxxxxxx /data1 vfat defaults 0 0
 ====================================================================================
 # useradd -u 8278 jack
 # mkdir /root/backup
+# useradd julice
+# su - julice
+# exit
 # find / -user julice -exec cp {} /root/backup/ \;   or
 # find / -user julice -exec cp -rfp {} /root/backup/ \;
 
@@ -236,6 +239,7 @@ UUID=xxxxxxx /data1 vfat defaults 0 0
 
 19. VDO
 =======
+# yum install vdo
 # fdisk /dev/vdb
 * create 5GB partition
 # vdo create --device /dev/vdbX -n vdodata --compression enabled
@@ -247,6 +251,7 @@ UUID=xxxxxxx /data1 vfat defaults 0 0
 # dnf install stratis-cli stratisd
 # fdisk /dev/vdb
 * create 5GB partition
+# systemctl start stratisd
 # stratis pool create mypool /dev/vdbX 
 # stratis pool list
 # stratis fs create mypool myfs1
