@@ -278,8 +278,6 @@ B. 2031::130F::9C0:876A:130B
 22. Mount NFS mountpoint: ( this question not available in exam, but i just prepare )
 =========================
 # yum install nfs-utils
-# systemctl enable nfs-secure
-# systemctl start nfs-secure
 # cd /
 # mkdir nfsmountpoint
 # mount -t nfs -o sync 10.13.68.227:/mnt /nfsmountpoint
