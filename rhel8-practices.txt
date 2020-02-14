@@ -100,7 +100,7 @@ your name
 > select "p"
 > select "n"
 > select "l"
-> +100M
+> +1000M
 > select t; 83 (linux LVM)
 > w
 # partprobe
@@ -122,6 +122,7 @@ UUID=xxxxxxx /data1 ext4 defaults 0 0
 # umount /data1
 # e2fsck -f /dev/mapper/vgdata/data1
 # lvreduce -L 400M /dev/mapper/vgdata/data1
+# resize2fs /dev/mapper/vgdata/data1
 # mount -a
 # lvdisplay
 
