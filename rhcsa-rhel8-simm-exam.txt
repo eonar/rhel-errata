@@ -1,0 +1,123 @@
+List of VM for Exam Candidates
+===================================================
+1. 175.138.64.53:20221 yusri
+2. 175.138.64.53:20222 yenling
+3. 175.138.64.53:20223 lau
+4. 175.138.64.53:20224 gary
+5. 175.138.64.53:20225 amin
+6. 175.138.64.53:20226 leon
+
+Pre-requisite
+===================================================
+Reset root password before you attempt to answer the questions below.
+
+SSH to 175.138.64.53:20220 (Username: root / Password: ********)
+Run virt-manager and then you can access to your VM's console to reset root password.
+
+Reminders!!!
+===================================================
+All settings need to be configured to be persistent across reboots.
+Install additional packages as and when applicable or required.
+
+Question 1
+===================================================
+Set your VM hostname to follow your name. Example: yusri, gary, amin, and so on.
+Set a manual IPv6 IP address to following and activate both your IPv4 and IPv6 connections:
+
+yusri = fd80::5054:ff:fe84:586a/64
+yenling = fd80::5054:ff:fe84:586b/64
+lau = fd80::5054:ff:fe84:586c/64
+gary = fd80::5054:ff:fe84:586d/64
+amin = fd80::5054:ff:fe84:586e/64
+leon = fd80::5054:ff:fe84:586f/64
+
+Question 2
+===================================================
+Setup your YUM BaseOS repository to point to http://10.13.68.227/repos/BaseOS
+
+Question 3
+===================================================
+Update kernel package.
+
+Question 4
+===================================================
+Setup your YUM Application Stream repository to point to http://10.13.68.227/repos/AppStream
+
+Question 5
+===================================================
+Configure your VM as NTP client using chrony to sync your clock from default RHEL NTP server pool.
+
+Question 6
+===================================================
+Add a new 40G partition in /dev/vda disk then make use of it to extend the size of "rhel" VG. Extend 5G for "var_log" LG. Grow the /var/log filesystem.
+
+Question 7
+===================================================
+Create a new 1G partition in /dev/vda, make use of it to create "vgdata" VG with PE size set to 16M, then create a LG named "data1" with size of 50 extends. Create "data1" LG as vfat filesystem and mount it as /data1
+
+Question 8
+===================================================
+Resize /data1 filesystem to 400M.
+
+Question 9
+===================================================
+Create a new 100M partition in /dev/vdb. Create it as xfs filesystem. Mount it as /data.
+
+Question 10
+===================================================
+Create a new 100M partition in /dev/vdb then add it as new swap device.
+
+Question 11
+===================================================
+Set SELinux to run in enforcing mode.
+
+Question 12
+===================================================
+Add a group called "sysgrp".
+Add users susan and andrew and add "sysgrp" as their supplementary group.
+Add user sarah but without interactive shell for her.
+Set user shahmat to gain access to administrator level (i.e. have access to the sudo command).
+Set password to 'ctcp0wer` (without quotes) for users susan, andrew, sarah
+
+Question 13
+===================================================
+Add user jack with UID 8278.
+Create /root/backup directory as root.
+Add user julice.
+Copy every files and directories owned by julice to /root/backup directory.
+
+Question 14
+===================================================
+Create /home/file1 as a collaborative directory. This collaborative directory is to own by group sysgrp. Any files created under this directory will be automatically owned by sysgrp.
+User and group must be able to read, write, executable on /home/file1 directory. Others are not allowed to have any permission on /home/file1 directory.
+Create an empty file "test.txt" under /home/file1 collaborative directory.
+
+Question 15
+===================================================
+Configure cron job so that it will print "hello" (without the quuotes) to /tmp/timestamp at every 30 minutes interval.
+
+Question 16
+===================================================
+Search for "dejavu" (without the quotes) from /usr/share/doc/dracut/dracut.html then redirect it to /root/lines file.
+
+Question 17
+===================================================
+Archive /usr/local directory as tarball and compress it in bzip2 format (.bz2) and place it under /root directory with filename data.tar.bz2
+
+Question 18
+===================================================
+Create a new 5G partition in /dev/vdb, then create it as VDO device with name vdodata and enable compression.
+
+Question 19
+===================================================
+Create a new 5G partition in /dev/vdb, then create a Stratis pool on top of this partition, then create a Stratis filesystem called myfs1.
+Mount Stratis filesystem myfs1 under /myfs1 directory.
+Create a snapshot on myfs1 called myfs1-experiment.
+
+Question 20
+===================================================
+Tune the kernel to enable IPv4 forwarding.
+
+Question 21
+===================================================
+Mount /nfsmountpoint from NFS server 10.13.68.227 as /mnt
