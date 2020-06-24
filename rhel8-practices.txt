@@ -256,7 +256,7 @@ use getfacl & setfacl for the request
 # cp /etc/fstab /var/tmp/fstab
 # setfacl -m u:natasha:rwx /var/tmp/fstab
 # setfacl -m u:harry:- /var/tmp/fstab
-# setfacl -m u::r
+# setfacl -m u::r /var/tmp/fstab
 
 
 16. Set crontab for user:
