@@ -1,6 +1,13 @@
+there are 2 VMs for actual scenario
+1. 1st vm - for system configuration: user/group/hostname/network/selinux
+2. 2nd vm - for root password recovery, mostly storage stuff, vdo is here also
+
+*** MUST REBOOT 2nd VM to VERIFY that VM can BOOT!!!
+
 1. Reset root password
 ======================
-*requires xming
+(note: on 2nd vm)
+
 *ssh to 175.138.64.53:20220
 *run virt-manager
 
@@ -30,6 +37,8 @@ systemctl isolate graphical.target
 
 2. Set IP, netmask, gateway, DNS, hostname
 ==========================================
+(note: on 1st vm)
+
 *** this section is a given, no need to do anything.
 # nmtui  < --- Please set IP, netmask, gateway, DNS, hostname using "nmtui tools". Or you can using nmcli with below command but i'm not suggest use nmcli. nmtui tools more freindly to use. Verify at /etc/sysconfig/network-scripts/ifcfg-eth0
 
@@ -45,8 +54,10 @@ your name
 # hostnamectl set-hostname <your name>
 # hostname
 
-3. Configure kernel repository
+3. Configure BaseOS repository
 ==============================
+(note: on both vms)
+
 # cd /etc/yum.repo.d/
 # mount /dev/sr0 /media
 # vi repos.repo
@@ -55,19 +66,23 @@ your name
 > baseurl=http://10.13.68.227/repos/BaseOS
 > gpgcheck=0
 > enabled=1
-# yum repolist  < -- to verify
+# dnf repolist  < -- to verify
 
 4. kernel update
-================ 
-# yum install kernel
+================
+(note: not tested)
+
+# dnf install kernel
 # uname -r
 # cat /proc/version
-# rpm -qa | grep kernel
+# dnf -qa | grep kernel
 # reboot
 # uname -r
 
-5. Configure package repository
-===============================
+5. Configure AppStream repository
+=================================
+(note: on both vms)
+
 # cd /etc/yum.repo.d/
 # vi repos.repo and add the following
 > [AppStream]
@@ -75,27 +90,37 @@ your name
 > baseurl=http://10.13.68.227/repos/AppStream
 > gpgcheck=0
 > enabled=1
-# yum repolist  < -- to verify
+# dnf repolist  < -- to verify
 
 6. Configure NTP
 ================
-# yum install chrony
+(note: installed, set /etc/chronyd.conf to point to ip address)
+
+# dnf install chrony
 # systemctl restart chronyd.service
 # system enable chronyd.service
-# chronyc source -V  < -- to check ntp status
+# vi /etc/chrony.conf
+> #replace pool line with given hostname/ip address
+server x.x.x.x iburst
+# systemctl restart chronyd.service
+# chronyc sources -v  < -- to check ntp status
 
-7. Resize the logical volume for existing mountpoint
-====================================================
+7. Extend an existing logical volume for existing mountpoint
+============================================================
+(note: on 2nd vm, make sure to know both xfs_growfs/resize2fs)
+
 # fdisk /dev/vda
-* add 3rd partition size 40G type Linux LVM
+* add 3rd partition size 10G type Linux LVM
 # pvcreate /dev/vdaX
 # vgextend rhel /dev/vdaX
 # lvextend -L+5G /dev/rhel/var_log
 # xfs_growfs /var/log
 # df -h   <-- to verify new size
 
-8. Create new PV,new VG with 16MB extend, 50 extend and must vfat filesystem, then mount /data1
-================================================================================================
+8. Create new PV,new VG with 16MiB extend, 50 extend and ext3 filesystem, then mount /data1
+===========================================================================================
+(note: on 2nd vm)
+
 # fdisk /dev/vda
 > select "p"
 > select "n"
@@ -108,16 +133,18 @@ your name
 # vgcreate -s 16M vgdata /dev/vdaX
 # vgdisplay vgdata  < -- refer at PE to verify
 # lvdisplay -l 50 -n data1 vgdata
-# mkfs.ext4 /dev/mapper/vgdata-data1
+# mkfs.ext3 /dev/mapper/vgdata-data1
 # cd / | mkdir /data1
 # blkid
 # vi /etc/fstab
-UUID=xxxxxxx /data1 ext4 defaults 0 0
+UUID=xxxxxxx /data1 ext3 defaults 0 0
 # mount -a
 # df -hT  < -- to verify
 
 9. Reduce/resize the logical volume for existing mountpoint
-====================================================
+===========================================================
+(note: on 2nd vm)
+
 # df -h
 # umount /data1
 # e2fsck -f /dev/mapper/vgdata/data1
@@ -128,7 +155,7 @@ UUID=xxxxxxx /data1 ext4 defaults 0 0
 
 10. Create 100MB PV under /data mountpoint
 =========================================
-*I remember this question they only have 1 disk with 3 PV(/dev/sda1, /dev/sda2, /dev/sda3). Read carefully next question you need configure new PV for swap. Please remember to select /dev/sda then select "extend" for partition number 4 to use for VG and next wuestion for swap. Below is sample:
+*I remember this question they only have 1 disk with 3 PV(/dev/sda1, /dev/sda2, /dev/sda3). Read carefully next question you need configure new PV for swap. Please remember to select /dev/sda then select "extend" for partition number 4 to use for VG and next question for swap. Below is sample:
 
 # fdisk /dev/vdb
 > select "n"
@@ -174,34 +201,36 @@ UUID=xxxxxxx /data xfs defaults 0 0
 # free -m
 
 12. Set selinux:
-===============
+================
+(note: on 1st vm, httpd service failed to start due to selinux)
+
 # getenforce
 # vi /etc/selinux/config
->SELINUX=enforcing
-# setenforce enforcing
+>SELINUX=permissive
+# setenforce 0
 # getenforce  < -- to verify
 
 13. Create user, group and memberships:
 ======================================
-# groupadd sysgrp
-# useradd susan
-# useradd andrew
-# usermod -aG sysgrp andrew
-# usermod -aG sysgrp susan
+# groupadd adminusers
+# useradd natasha
+# useradd harry
+# usermod -aG adminusers natasha
+# usermod -aG adminusers harry
 # useradd -s /sbin/nologin sarah  < -- sarah no interactive shell
-# useradd -G wheel shahmat
 
-# passwd susan  < -- set password for user
-# passwd andrew
+# passwd natasha  < -- set password for user
+# passwd harry
 # passwd sarah
 
-# id andrew  < -- to verify
-# id susan
+# id natasha  < -- to verify
+# id harry
 # id sarah
 
 14. Add new user with specific ID and copy to /root/backup own by other user (julice)
 ====================================================================================
 # useradd -u 8278 jack
+
 # mkdir /root/backup
 # useradd julice
 # su - julice
@@ -211,17 +240,28 @@ UUID=xxxxxxx /data xfs defaults 0 0
 
 15. Set permission of folder for user access:
 =============================================
-# mkdir -p /home/file1
-# chown :sysgrp /home/file1 < -- or below command
-# chgrp sysgrp /home/file1
+# mkdir -p /home/admin
+# chown :adminusers /home/file1 < -- or below command
+# chgrp adminusers /home/file1
 # chmod 2770 /home/file1 < -- sample only, permission set base on question and sticky bit.(meaning set for 2770 = drwrxrws---)
 # cd /home/file1
 # touch test.txt
-# ls -la  < -- verify to check ( ownership shld belong sysgrp )
+# ls -la  < -- verify to check ( group shld belong adminusers )
+
+-------------------------------------
+use getfacl & setfacl for the request
+-------------------------------------
+(note: natasha rwx, harry ---, others r--)
+
+# cp /etc/fstab /var/tmp/fstab
+# setfacl -m u:natasha:rwx /var/tmp/fstab
+# setfacl -m u:harry:- /var/tmp/fstab
+# setfacl -m u::r
+
 
 16. Set crontab for user:
 =========================
-# yum install cronie
+# dnf install cronie
 # systemctl enable crond
 # systemctl start crond
 # crontab -e
@@ -236,11 +276,13 @@ UUID=xxxxxxx /data xfs defaults 0 0
 18. create backup file content of /usr/local and tar must bzip2 to compress:
 ============================================================================
 # tar jcvf /root/data.tar.bz2 /usr/local
-# tar -cvzf /root/local.tgz /usr/local
+
 
 19. VDO
 =======
-# yum install vdo
+(note: in scenario)
+
+# dnf install vdo
 # fdisk /dev/vdb
 * create 5GB partition
 # vdo create --device /dev/vdbX -n vdodata --compression enabled
@@ -249,6 +291,8 @@ UUID=xxxxxxx /data xfs defaults 0 0
 
 20. Stratis
 ===========
+(note: not in scenario)
+
 # dnf install stratis-cli stratisd
 # fdisk /dev/vdb
 * create 5GB partition
@@ -266,7 +310,7 @@ UUID=xxxxxxx /data xfs defaults 0 0
 # stratis fs list
 
 21. IPV6 and Enable IP forwading:
-========================
+=================================
 Which IPV6 address is *not* valid?
 A. 2031:0:130F::9C0:876A:130B
 B. 2031::130F::9C0:876A:130B
