@@ -285,7 +285,12 @@ use getfacl & setfacl for the request
 # dnf install vdo
 # fdisk /dev/vdb
 * create 5GB partition
-# vdo create --device /dev/vdbX -n vdodata --compression enabled
+# vdo create --vdoLogicalSize 51440 -n vdough --device /dev/vdb
+# mkdir /vbread.
+# mkfs.xfs /dev/mapper/vdough
+# mount /dev/mapper/vdough /vbread
+# vi /etc/fstab
+> /dev/mapper/vdough /vbread xfs default 0 0
 # vdostats
 # vdo list
 
